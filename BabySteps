@@ -1,0 +1,214 @@
+/* To get Started with some Basic Comments in PigScript the Following Might Be Useful*/
+
+Data.txt - Input
+------------------------------------------------------------------
+11,hari,10,20
+12,Mary,20,40
+13,katrina,30,40
+14,Kareena,40,50
+15,hari,25,35
+
+Load function
+-------------------------------------------------------------------
+HD = load 'pathname';
+HD = load 'pathname' using PigStorage(',');
+HD = load 'pathname' using PigStorage(',') as (id:int, name:chararray, mark1:int, mark2:int);  
+	// each column by default it is $0, $1, $2 etc.. it can be used in the generate statement
+	
+
+
+
+Describe function
+-------------------------------------------------------------------
+describe HD;
+
+
+Looping
+-------------------------------------------------------------------
+X = foreach HD 
+{
+   sum = f3+f4;                  // logic
+   generate f1,sum;     	     	//  output form
+}
+
+Ordering function
+--------------------------------------------------------------------
+DH = order HD by name; // orders the data with respect to the ascii value of the characters (CAPS first, small then) in ascending order
+DH = order HD by name desc; // orders the data with respect to the ascii value of the characters (vice versa) in descending order
+DH = limit HD 3; // top three records will be displayed
+
+Group by
+--------------------------------------------------------------------
+
+Example data.txt
+---------------------------------
+John,fl,3.9F
+John,wt,3.7F
+John,sp,4.0F
+John,sm,3.8F
+Mary,fl,3.8F
+Mary,wt,3.9F
+Mary,sp,4.0F
+Mary,sm,4.0F
+
+calculating the avg gpa for each student
+------------------------------------------------
+
+HD = load 'pathname' using PigStorage(',') as (name:charrarray, term:charrarray, gpa:float);
+
+DH = group HD by name;
+
+CH = foreach DH generate HD.name, avg(HD.gpa); //aggregate function for finding average avg(fieldname).
+
+String/ Evaluatuion operations in Pigscript
+----------------------------------------------------------------------
+
+CONCAT(Stringfield1, StringField2)
+----------------------------------------------
+HD = load 'pathname' using PigStorage(',') as (fname:chararray, lname:chararray, term:chararray, gpa:float);
+DH = foreach HD generate CONCAT(fname,lname),term,gpa;
+
+COUNT // number of elements in a bag
+----------------------------------------------
+HD = load 'pathname' using PigStorage(',') as (val1:int, val2:int, val3:int);
+
+dump HD;
+
+(1,2,3)
+(4,2,1)
+(8,3,4)
+(4,3,3)
+(7,2,5)
+(8,4,3)
+
+DH = group HD by val1;
+
+dump DH;
+
+(1,{(1,2,3)})
+(4,{(4,3,3),(4,2,1)})
+(7,{(7,2,5)})
+(8,{(8,4,3),(8,3,4)})
+
+CH = foreach DH generate COUNT(HD); // COUNT_STAR includes null values into the count
+
+dump CH;
+(1)
+(2)
+(1)
+(2)
+
+
+Join operations
+-------------------------------------------------------------------------------------------
+
+
+Sample1.txt			
+-----------
+1,2,3
+4,2,1
+8,3,4
+4,3,3
+7,2,5
+8,4,3
+
+Sample2.txt
+------------
+2,4
+8,9
+1,3
+2,7
+2,9
+4,6
+4,9
+
+JOIN			\\gives only the Matching values in both the files
+--------------------------------------------
+
+HD = load '/home/intcustuser1/Hari/Sample1.txt' using PigStorage(',') as (k1:int, k2:int, k3:int);
+DH = load '/home/intcustuser1/Hari/Sample2.txt' using PigStorage(',') as (l1:int, k2:int, k3:int);
+CH = JOIN HD by k1, DH by l1;
+DUMP CH;
+
+
+Output
+-------
+(1,2,3,1,3,)
+(4,3,3,4,9,)
+(4,3,3,4,6,)
+(4,2,1,4,9,)
+(4,2,1,4,6,)
+(8,4,3,8,9,)
+(8,3,4,8,9,)
+
+FULL OUTER JOIN		\\gives the non matching values from both the files, representing it as null value
+---------------------------------------------
+
+HD = load '/home/intcustuser1/Hari/Sample1.txt' using PigStorage(',') as (k1:int, k2:int, k3:int);
+DH = load '/home/intcustuser1/Hari/Sample2.txt' using PigStorage(',') as (l1:int, k2:int, k3:int);
+CH = JOIN HD by k1 FULL OUTER, DH by l1;
+DUMP CH;
+
+Output
+------
+(1,2,3,1,3,)
+(,,,2,9,)
+(,,,2,7,)
+(,,,2,4,)
+(4,3,3,4,9,)
+(4,3,3,4,6,)
+(4,2,1,4,9,)
+(4,2,1,4,6,)
+(7,2,5,,,)
+(8,4,3,8,9,)
+(8,3,4,8,9,)
+
+LEFT OUTER JOIN		\\Gives both matching and non-matching values from Left file and matching value from the right file
+----------------------------------------
+
+HD = load '/home/intcustuser1/Hari/Sample1.txt' using PigStorage(',') as (k1:int, k2:int, k3:int);
+DH = load '/home/intcustuser1/Hari/Sample2.txt' using PigStorage(',') as (l1:int, k2:int, k3:int);
+CH = JOIN HD by k1 LEFT OUTER || LEFT, DH by l1;
+DUMP CH;
+
+
+Output
+------
+(1,2,3,1,3,)
+(4,3,3,4,9,)
+(4,3,3,4,6,)
+(4,2,1,4,9,)
+(4,2,1,4,6,)
+(7,2,5,,,)
+(8,4,3,8,9,)
+(8,3,4,8,9,)
+
+RIGHT OUTER JOIN		\\Gives both matching and non-matching values from right file and matching value from the left file
+----------------------------------------
+
+HD = load '/home/intcustuser1/Hari/Sample1.txt' using PigStorage(',') as (k1:int, k2:int, k3:int);
+DH = load '/home/intcustuser1/Hari/Sample2.txt' using PigStorage(',') as (l1:int, k2:int, k3:int);
+CH = JOIN HD by k1 RIGHT OUTER || RIGHT, DH by l1;
+DUMP CH;
+
+
+Output
+------
+(1,2,3,1,3,)
+(,,,2,9,)
+(,,,2,7,)
+(,,,2,4,)
+(4,3,3,4,9,)
+(4,3,3,4,6,)
+(4,2,1,4,9,)
+(4,2,1,4,6,)
+(8,4,3,8,9,)
+(8,3,4,8,9,)
+
+
+
+
+
+
+
+
